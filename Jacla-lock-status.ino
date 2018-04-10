@@ -3,7 +3,10 @@
 /*******************************************************************
  *  Trigger event at end of the setup                              *
  *                                                                 *
- *  adapted by Brian Lough                                         *
+ *  adapted by Brian Lough                                 
+ *  edited by Takamasa.Iijima
+ *  
+ **
  *******************************************************************/
 
 #define KEY "#####################"  // Get it from this page https://ifttt.com/services/maker/settings
@@ -63,17 +66,10 @@ void setup(void){
    Serial.print("Connecting to " + String(ssid));
 
   //WiFi接続開始
-  WiFi.begin(ssid, password);
-  
-  //接続状態になるまで待つ
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
+
 
   //接続に成功。IPアドレスを表示
-  Serial.print("Connected! IP address: ");
-  Serial.println(WiFi.localIP());
+  
   Wire.begin();
   int error;
   uint8_t c;
@@ -93,20 +89,14 @@ void setup(void){
   MPU6050_write_reg (MPU6050_PWR_MGMT_1, 0);
   
 }
-IPAddress ip = WiFi.localIP();
+
 boolean sta =false;
-
 String message = "Initial";
-
-
 
 boolean sopen = true;
 boolean sclose = false;
 
-
-
 int ocount = 0;
-
 int ccount = 0;
 
 
@@ -144,7 +134,7 @@ void loop() {
 
   Serial.print(acc_angle_y, 2);
   Serial.print("\t");
-   Serial.println("\t");
+  Serial.println("\t");
   
 
   float gyro_x = accel_t_gyro.value.x_gyro / 131.0;  //FS_SEL_0 131 LSB / (°/s)
@@ -165,6 +155,13 @@ void loop() {
     delay(1000);
 
     if (ccount == 3 && sclose == false) {
+        WiFi.begin(ssid, password);
+  
+      //接続状態になるまで待つ
+      while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+      }
       sclose = true;
       sopen = false;
 
@@ -174,6 +171,7 @@ void loop() {
       post(message);
       
       delay(1000);
+      WiFi.disconnect(); //wifiを切りたい(電池の消費を減らしたい)
       
     } else if (ocount == 3 && sclose == true) {
       Serial.println("pass");
@@ -186,7 +184,13 @@ void loop() {
     delay(1000);
 
     if (ocount == 3 && sopen == false) {
-
+      WiFi.begin(ssid, password);
+  
+      //接続状態になるまで待つ
+      while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+      }
       sclose = false;
       sopen = true;
 
@@ -195,6 +199,7 @@ void loop() {
       delay(1000);
       message = "部室があいたよ！";           
       post(message);
+      WiFi.disconnect();
       
     } else if (ocount == 3 && sopen == true) {
       Serial.println("pass");
@@ -206,7 +211,7 @@ void loop() {
 void post(String message){
   
   //triggerEvent takes an Event Name and then you can optional pass in up to 3 extra Strings
-  if(ifttt.triggerEvent("button", message, ip.toString())){
+  if(ifttt.triggerEvent("button", message)){
     Serial.println("Successfully sent");
   } else
   {
